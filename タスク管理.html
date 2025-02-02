@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>タスク管理アプリ</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f4f6f8;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333333;
+        }
+        .task-input {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .task-input input, .task-input textarea {
+            flex: 1;
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #cccccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .task-input textarea {
+            resize: vertical;
+        }
+        .task-input button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .task-input button:hover {
+            background-color: #0056b3;
+        }
+        .task-list {
+            list-style: none;
+            padding: 0;
+        }
+        .task-item {
+            background-color: #fafafa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #eeeeee;
+            border-radius: 4px;
+            position: relative;
+        }
+        .task-item.completed {
+            background-color: #f0f0f0; /* 背景色をグレーに */
+            color: #999999; /* テキストの色をグレーに */
+            text-decoration: line-through;
+        }
+        .task-item h3 {
+            margin: 0 0 10px;
+            font-size: 18px;
+        }
+        .task-item p {
+            margin: 0 0 10px;
+            font-size: 16px;
+            color: #666666;
+        }
+        .task-item.completed h3,
+        .task-item.completed p {
+            color: #999999; /* 完了したタスクのテキストをグレーに */
+        }
+        .task-item .actions {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+        }
+        .task-item .actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #007bff;
+            font-size: 16px;
+            margin-left: 10px;
+        }
+        .task-item .actions button:hover {
+            color: #0056b3;
+        }
+        .task-item .actions button.delete {
+            color: #ff4d4d;
+        }
+        .task-item .actions button.delete:hover {
+            color: #cc0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>タスク管理アプリ</h1>
+        <div class="task-input">
+            <input type="text" id="task-title" placeholder="タスク名">
+            <textarea id="task-desc" rows="2" placeholder="タスクの詳細"></textarea>
+            <button onclick="addTask()">追加</button>
+        </div>
+        <ul id="task-list" class="task-list"></ul>
+    </div>
+    <script>
+        let tasks = [];
+
+        // ページ読み込み時にローカルストレージからタスクを読み込む
+        window.onload = function() {
+            if (localStorage.getItem('tasks')) {
+                tasks = JSON.parse(localStorage.getItem('tasks'));
+                renderTasks();
+            }
+        };
+
+        // タスクを追加する関数
+        function addTask() {
+            const title = document.getElementById('task-title').value;
+            const desc = document.getElementById('task-desc').value;
+
+            if (title === '') {
+                alert('タスク名を入力してください。');
+                return;
+            }
+
+            const task = {
+                id: Date.now(),
+                title: title,
+                desc: desc,
+                completed: false
+            };
+
+            tasks.push(task);
+            saveTasks();
+            renderTasks();
+            clearInputFields();
+        }
+
+        // タスクを表示する関数
+        function renderTasks() {
+            const taskList = document.getElementById('task-list');
+            taskList.innerHTML = '';
+
+            tasks.forEach(task => {
+                const taskItem = document.createElement('li');
+                taskItem.className = 'task-item' + (task.completed ? ' completed' : '');
+                taskItem.innerHTML = `
+                    <h3>${task.title}</h3>
+                    <p>${task.desc}</p>
+                    <div class="actions">
+                        <button onclick="toggleComplete(${task.id})">${task.completed ? '未完了' : '完了'}</button>
+                        <button onclick="editTask(${task.id})">編集</button>
+                        <button class="delete" onclick="deleteTask(${task.id})">削除</button>
+                    </div>
+                `;
+                taskList.appendChild(taskItem);
+            });
+        }
+
+        // タスクを完了/未完了に切り替える関数
+        function toggleComplete(id) {
+            tasks = tasks.map(task => {
+                if (task.id === id) {
+                    task.completed = !task.completed;
+                }
+                return task;
+            });
+            saveTasks();
+            renderTasks();
+        }
+
+        // タスクを編集する関数
+        function editTask(id) {
+            const task = tasks.find(task => task.id === id);
+            document.getElementById('task-title').value = task.title;
+            document.getElementById('task-desc').value = task.desc;
+            deleteTask(id);
+        }
+
+        // タスクを削除する関数
+        function deleteTask(id) {
+            tasks = tasks.filter(task => task.id !== id);
+            saveTasks();
+            renderTasks();
+        }
+
+        // ローカルストレージにタスクを保存する関数
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        // 入力フィールドをクリアする関数
+        function clearInputFields() {
+            document.getElementById('task-title').value = '';
+            document.getElementById('task-desc').value = '';
+        }
+    </script>
+</body>
+</html>
